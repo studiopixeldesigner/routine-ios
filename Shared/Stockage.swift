@@ -7,15 +7,16 @@ enum Stockage {
     static let groupe = "group.com.pixeldesigner.maroutine"
 
     /// Dossier utilisable : le groupe d'apps s'il accepte réellement une écriture, sinon les documents.
-    /// SideStore renomme le groupe d'apps en y ajoutant l'identifiant d'équipe de ton compte Apple,
-    /// et note le vrai nom dans la clé « ALTAppGroups » de l'Info.plist : on essaie chaque possibilité.
+    /// SideStore et iloader renomment le groupe d'apps en y ajoutant l'identifiant d'équipe de ton compte
+    /// Apple (10 caractères en majuscules), qu'ils ajoutent aussi à l'identifiant de l'appli :
+    /// « com.pixeldesigner.maroutine.ABCDE12345 » pour l'appli, « ….ABCDE12345.widgets » pour le widget.
+    /// SideStore note en plus le vrai nom dans la clé « ALTAppGroups » de l'Info.plist : on essaie chaque possibilité.
     private static var groupesPossibles: [String] {
         var l = (Bundle.main.object(forInfoDictionaryKey: "ALTAppGroups") as? [String]) ?? []
         l.append(groupe)
-        if let id = Bundle.main.bundleIdentifier,
-           let equipe = id.split(separator: ".").last.map(String.init),
-           equipe.count == 10, equipe == equipe.uppercased() {
-            l.append("\(groupe).\(equipe)")
+        for morceau in (Bundle.main.bundleIdentifier ?? "").split(separator: ".").map(String.init)
+        where morceau.count == 10 && morceau.allSatisfy({ $0.isNumber || ($0.isASCII && $0.isUppercase) }) {
+            l.append("\(groupe).\(morceau)")
         }
         return l
     }

@@ -4,11 +4,16 @@ Appli iPhone de la routine 9h – 0h45 : journée, sport (muscu et marche), nutr
 
 ## Installer
 
-1. Sur l'iPhone, ouvrir https://github.com/studiopixeldesigner/routine-ios/releases/latest/download/MaRoutine.ipa
-2. Ouvrir le fichier téléchargé avec **SideStore**.
-3. Renouveler l'appli dans SideStore tous les 7 jours (compte Apple gratuit).
-4. Au premier lancement, accepter les notifications (rappels) et l'accès à Santé (pas).
+Avec un compte Apple gratuit, de deux façons :
 
+- **iloader (depuis un PC)** : brancher l'iPhone, ouvrir [iloader](https://iloader.app), se connecter,
+  « Importer IPA » et choisir `MaRoutine.ipa`
+  (https://github.com/studiopixeldesigner/routine-ios/releases/latest/download/MaRoutine.ipa).
+  Refaire la même chose tous les 7 jours : les données sont gardées.
+- **SideStore (depuis l'iPhone)** : ouvrir le lien de l'IPA, puis SideStore → My Apps → « + ».
+  Renouveler dans SideStore tous les 7 jours.
+
+Au premier lancement, accepter les notifications (rappels) et l'accès à Santé (pas).
 Le widget « Ma journée » s'ajoute comme n'importe quel widget (écran d'accueil ou écran verrouillé).
 
 ## Ce que fait l'appli
