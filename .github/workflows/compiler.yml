@@ -1,0 +1,74 @@
+name: Compiler l'appli
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: compiler
+  cancel-in-progress: true
+
+jobs:
+  ipa:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Choisir la version d'Xcode la plus récente
+        run: |
+          ls -d /Applications/Xcode*.app
+          XC=$(ls -d /Applications/Xcode_*.app | grep -iv beta | sort -V | tail -1)
+          echo "Xcode choisi : $XC"
+          sudo xcode-select -s "$XC"
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i ios
+
+      - name: Installer XcodeGen et ldid
+        run: brew install xcodegen ldid
+
+      - name: Générer le projet Xcode
+        run: xcodegen generate
+
+      - name: Compiler (sans signature)
+        run: |
+          set -o pipefail
+          xcodebuild -project MaRoutine.xcodeproj -scheme MaRoutine -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            build 2>&1 | tee compilation.log | grep -E "error:|warning: .*deprecated|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" compilation.log
+
+      - name: Montrer les erreurs de compilation
+        if: failure()
+        run: grep -n -B2 -A6 "error:" compilation.log | head -300 || true
+
+      - name: Ajouter les autorisations et fabriquer l'IPA
+        run: |
+          APP=build/Build/Products/Release-iphoneos/MaRoutine.app
+          ls "$APP" "$APP/PlugIns"
+          # SideStore relit ces autorisations (Santé, groupe d'apps partagé avec le widget) au moment de signer
+          ldid -SWidgets/MaRoutineWidgets.entitlements "$APP/PlugIns/MaRoutineWidgets.appex/MaRoutineWidgets"
+          ldid -SApp/MaRoutine.entitlements "$APP/MaRoutine"
+          ldid -e "$APP/MaRoutine"
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          zip -qry MaRoutine.ipa Payload
+          ls -la MaRoutine.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MaRoutine-ipa
+          path: MaRoutine.ipa
+
+      - name: Publier l'IPA (adresse fixe)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete derniere --yes --cleanup-tag || true
+          gh release create derniere MaRoutine.ipa --title "Ma routine – dernière version (n° ${{ github.run_number }})" \
+            --notes "Ouvre ce lien sur ton iPhone, puis ouvre le fichier avec SideStore." --latest
