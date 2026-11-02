@@ -14,6 +14,7 @@ final class Magasin: ObservableObject {
 
     init() {
         d = Stockage.charger()
+        derniereEcriture = Date()      // le fichier vient d'être lu : pas besoin de le relire à l'ouverture
         $d.dropFirst()
             .debounce(for: .milliseconds(400), scheduler: RunLoop.main)
             .sink { [weak self] donnees in self?.enregistrer(donnees) }

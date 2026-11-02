@@ -384,6 +384,7 @@ struct MarcheView: View {
             }
         }
         .task {
+            guard !Capture.actif else { return }       // pas de fenêtre Santé pendant les captures
             if sante.etat == .inconnu { await sante.demander() } else { await sante.lirePas() }
         }
         .onChange(of: sante.pasParJour) { _, valeurs in

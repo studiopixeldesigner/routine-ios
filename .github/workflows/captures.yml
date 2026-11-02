@@ -58,7 +58,7 @@ jobs:
             nom=$1; shift
             xcrun simctl terminate "$UDID" $ID || true
             xcrun simctl launch "$UDID" $ID "$@"
-            sleep 3
+            sleep 5
             xcrun simctl io "$UDID" screenshot captures/$theme-$nom.png
           }
           for theme in light dark; do
