@@ -86,6 +86,7 @@ struct JourneeView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle(demain ? "Demain" : "Aujourd'hui")
+            .sousTitre(Temps.longue(Temps.date(cle) ?? m.maintenant))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Text("\(d.type(d.jour(Temps.journee(m.maintenant)).type).emoji) Jour \(d.type(d.jour(Temps.journee(m.maintenant)).type).nom.lowercased())")

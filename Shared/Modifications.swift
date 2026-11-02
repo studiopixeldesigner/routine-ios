@@ -60,6 +60,28 @@ extension Donnees {
 }
 
 extension Donnees {
+    /// Prépare une séance à partir du programme : séries, répétitions et charges prévues.
+    func preparerSeance(_ s: SeanceProgramme) -> SeanceEnCours? {
+        let exos = s.exos.filter { !$0.nom.trimmingCharacters(in: .whitespaces).isEmpty }.map { x -> ExoEnCours in
+            let repos = Int(nombre(x.repos)), n = max(1, Int(nombre(x.series)))
+            let reps = String(x.reps.prefix { $0.isNumber })
+            let charge = nombre(x.charge) > 0 ? decimal(nombre(x.charge)) : ""
+            return ExoEnCours(nom: x.nom.trimmingCharacters(in: .whitespaces), repos: repos > 0 ? repos : 90,
+                              series: (0..<n).map { _ in SerieEnCours(reps: reps, charge: charge) })
+        }
+        guard !exos.isEmpty else { return nil }
+        return SeanceEnCours(id: nouvelId(), seanceId: s.id, nom: s.nom, debut: Date(), exos: exos)
+    }
+
+    /// Séance d'exemple en plein repos, pour la capture de l'écran « séance en cours ».
+    mutating func demarrerDemo() {
+        guard let p = programme.first, var s = preparerSeance(p) else { return }
+        s.debut = Date().addingTimeInterval(-18 * 60)
+        for i in s.exos[0].series.indices.prefix(2) { s.exos[0].series[i].fait = true }
+        s.finRepos = Date().addingTimeInterval(75)
+        enCours = s
+    }
+
     /// Données d'exemple pour les captures du simulateur.
     mutating func ajouterDemo() {
         guard seances.isEmpty else { return }

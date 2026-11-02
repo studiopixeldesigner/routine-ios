@@ -99,15 +99,7 @@ struct SportView: View {
     }
 
     func lancer(_ s: SeanceProgramme) {
-        let exos = s.exos.filter { !$0.nom.trimmingCharacters(in: .whitespaces).isEmpty }.map { x -> ExoEnCours in
-            let repos = Int(nombre(x.repos)), n = max(1, Int(nombre(x.series)))
-            let reps = String(x.reps.prefix { $0.isNumber })
-            let charge = nombre(x.charge) > 0 ? decimal(nombre(x.charge)) : ""
-            return ExoEnCours(nom: x.nom.trimmingCharacters(in: .whitespaces), repos: repos > 0 ? repos : 90,
-                              series: (0..<n).map { _ in SerieEnCours(reps: reps, charge: charge) })
-        }
-        guard !exos.isEmpty else { return }
-        let seance = SeanceEnCours(id: nouvelId(), seanceId: s.id, nom: s.nom, debut: Date(), exos: exos)
+        guard let seance = m.d.preparerSeance(s) else { return }
         m.d.enCours = seance
         ActiviteDirect.demarrer(seance)
     }

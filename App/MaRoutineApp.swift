@@ -46,7 +46,7 @@ struct RacineView: View {
             .tint(Theme.accent)
 
             if intro {
-                IntroView(prenom: m.d.profil.prenom, photo: m.d.profil.photo) {
+                IntroView(prenom: m.d.profil.prenom, photo: m.d.profil.photo, fige: Capture.arguments.contains("-intro")) {
                     withAnimation(.easeOut(duration: 0.45)) { intro = false }
                 }
                 .transition(.opacity.combined(with: .scale(scale: 1.08)))
@@ -54,24 +54,35 @@ struct RacineView: View {
             }
         }
         .onAppear {
-            // Pour les captures automatiques sur le simulateur : « -capture 2 » ouvre l'onglet 2 sans l'intro,
-            // « -demo » ajoute quelques séances et pesées d'exemple (jamais utilisé sur ton iPhone).
-            let a = ProcessInfo.processInfo.arguments
+            // Pour les captures automatiques sur le simulateur (jamais utilisé sur ton iPhone) :
+            // « -capture 2 » ouvre l'onglet 2 sans l'intro, « -demo » ajoute des séances et pesées d'exemple,
+            // « -intro » garde l'intro affichée, « -seance » ouvre une séance en cours, « -marche » la marche.
+            let a = Capture.arguments
             if let i = a.firstIndex(of: "-capture"), i + 1 < a.count, let n = Int(a[i + 1]) { onglet = n; intro = false }
-            if a.contains("-demo") { m.d.ajouterDemo() }
+            guard Capture.actif else { return }
+            m.d.ajouterDemo()
+            UserDefaults.standard.set(a.contains("-marche") ? 1 : 0, forKey: "sousSport")
+            if a.contains("-seance") { m.d.demarrerDemo() } else { m.d.enCours = nil }
         }
         .task {
-            Rappels.demander()
+            if !Capture.actif { Rappels.demander() }
             Rappels.planifier(m.d)
             if let s = m.d.enCours { ActiviteDirect.mettreAJour(s) }
         }
     }
 }
 
+/// Arguments de lancement des captures automatiques.
+enum Capture {
+    static let arguments = ProcessInfo.processInfo.arguments
+    static let actif = arguments.contains("-demo")
+}
+
 /// « Bonjour Rayan » pendant 2 secondes au lancement, avec ta photo. Un appui la passe.
 struct IntroView: View {
     let prenom: String
     let photo: Data?
+    var fige = false
     let fin: () -> Void
     @State private var visible = false
 
@@ -119,6 +130,7 @@ struct IntroView: View {
         .onTapGesture { fin() }
         .task {
             visible = true
+            guard !fige else { return }
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             fin()
         }

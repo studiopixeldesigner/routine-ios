@@ -126,6 +126,11 @@ struct Coche: View {
 }
 
 extension View {
+    /// Petit sous-titre sous le grand titre de l'écran (iOS 26 et plus ; rien avant).
+    @ViewBuilder func sousTitre(_ texte: String) -> some View {
+        if #available(iOS 26.0, *) { navigationSubtitle(texte) } else { self }
+    }
+
     /// Petit titre de section en majuscules.
     func surtitre() -> some View {
         self.font(.caption.weight(.bold)).textCase(.uppercase).tracking(0.6).foregroundStyle(.secondary)

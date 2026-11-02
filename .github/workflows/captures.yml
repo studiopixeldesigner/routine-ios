@@ -28,10 +28,16 @@ jobs:
         run: |
           xcodegen generate
           set -o pipefail
-          xcodebuild -project MaRoutine.xcodeproj -scheme MaRoutine -configuration Debug -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build 2>&1 \
-            | tee sim.log | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
-          grep -q "BUILD SUCCEEDED" sim.log
+          compiler() {
+            xcodebuild -project MaRoutine.xcodeproj -scheme MaRoutine -configuration Debug -sdk iphonesimulator \
+              -destination 'generic/platform=iOS Simulator' -derivedDataPath build "$@" build 2>&1 \
+              | tee sim.log | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
+            grep -q "BUILD SUCCEEDED" sim.log
+          }
+          # Signature « locale » (sans compte Apple) pour que le widget ait une identité, comme sur l'iPhone ;
+          # sans signature si le simulateur la refuse.
+          compiler CODE_SIGNING_ALLOWED=YES CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- \
+            || compiler CODE_SIGNING_ALLOWED=NO
       - name: Lancer l'appli et prendre les captures
         run: |
           set -x
@@ -48,18 +54,19 @@ jobs:
           xcrun simctl status_bar "$UDID" override --time "9:41" --batteryLevel 100 --cellularBars 4 || true
           mkdir -p captures
           ID=com.pixeldesigner.maroutine
-          # Intro
-          xcrun simctl launch "$UDID" $ID -demo
-          sleep 1.2; xcrun simctl io "$UDID" screenshot captures/00-intro.png
-          sleep 4
+          prendre() {
+            nom=$1; shift
+            xcrun simctl terminate "$UDID" $ID || true
+            xcrun simctl launch "$UDID" $ID "$@"
+            sleep 3
+            xcrun simctl io "$UDID" screenshot captures/$theme-$nom.png
+          }
           for theme in light dark; do
             xcrun simctl ui "$UDID" appearance $theme
-            for o in 0 1 2 3 4; do
-              xcrun simctl terminate "$UDID" $ID || true
-              xcrun simctl launch "$UDID" $ID -capture $o -demo
-              sleep 3
-              xcrun simctl io "$UDID" screenshot captures/$theme-$o.png
-            done
+            prendre intro -demo -intro
+            for o in 0 1 2 3 4; do prendre $o -capture $o -demo; done
+            prendre seance -capture 1 -demo -seance
+            prendre marche -capture 1 -demo -marche
           done
           # L'appli a-t-elle planté ?
           ls ~/Library/Logs/DiagnosticReports/ | grep -i MaRoutine && echo "PLANTAGE DÉTECTÉ" || echo "Aucun plantage"

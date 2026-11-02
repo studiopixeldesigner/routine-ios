@@ -247,7 +247,10 @@ struct ProfilView: View {
         HStack {
             Text(titre)
             Spacer()
-            TextField("0", value: b, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 90)
+            // 0 = pas encore renseigné : on montre un tiret plutôt que « 0 ».
+            TextField("—", value: Binding<Double?>(get: { b.wrappedValue == 0 ? nil : b.wrappedValue },
+                                                   set: { b.wrappedValue = $0 ?? 0 }), format: .number)
+                .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 90)
         }
     }
 }
