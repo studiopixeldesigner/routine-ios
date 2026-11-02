@@ -1,7 +1,20 @@
 import SwiftUI
+import UserNotifications
+
+/// Affiche aussi les rappels (avec leur son) quand l'appli est ouverte.
+final class Delegue: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        [.banner, .sound, .list]
+    }
+}
 
 @main
 struct MaRoutineApp: App {
+    @UIApplicationDelegateAdaptor(Delegue.self) private var delegue
     @StateObject private var m = Magasin()
     @Environment(\.scenePhase) private var phase
 
