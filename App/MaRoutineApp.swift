@@ -53,6 +53,13 @@ struct RacineView: View {
                 .zIndex(1)
             }
         }
+        .onAppear {
+            // Pour les captures automatiques sur le simulateur : « -capture 2 » ouvre l'onglet 2 sans l'intro,
+            // « -demo » ajoute quelques séances et pesées d'exemple (jamais utilisé sur ton iPhone).
+            let a = ProcessInfo.processInfo.arguments
+            if let i = a.firstIndex(of: "-capture"), i + 1 < a.count, let n = Int(a[i + 1]) { onglet = n; intro = false }
+            if a.contains("-demo") { m.d.ajouterDemo() }
+        }
         .task {
             Rappels.demander()
             Rappels.planifier(m.d)

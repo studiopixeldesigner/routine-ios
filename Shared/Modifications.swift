@@ -58,3 +58,21 @@ extension Donnees {
         jours[cle] = j
     }
 }
+
+extension Donnees {
+    /// Données d'exemple pour les captures du simulateur.
+    mutating func ajouterDemo() {
+        guard seances.isEmpty else { return }
+        let auj = Temps.journee()
+        for i in stride(from: 12, through: 1, by: -2) {
+            let k = Temps.ajouter(auj, jours: -i), ts = (Temps.date(k)?.timeIntervalSince1970 ?? 0) * 1000
+            let s = programme[(12 - i) / 2 % programme.count]
+            seances.append(SeanceFaite(id: nouvelId(), date: k, ts: ts, nom: s.nom, seanceId: s.id, duree: 50 + i, volume: 3200 + Double(12 - i) * 90,
+                                       exos: [ExoFait(nom: "Développé couché haltères", series: [SerieFaite(reps: 10, charge: 20 + Double(12 - i))])]))
+        }
+        for i in 0..<5 { pesees[Temps.ajouter(auj, jours: -i * 4)] = 80 - Double(i) * 0.6 }
+        for i in 0..<5 { marche[Temps.ajouter(auj, jours: -i)] = JourMarche(date: Temps.ajouter(auj, jours: -i), pas: [6240, 9100, 7400, 10200, 8800][i], minutes: 20) }
+        var j = jour(auj); j.typeChoisi = true; j.faits["e1"] = true; j.faits["e2"] = true; jours[auj] = j
+        var n = nutritionDu(auj); n.eau = 5; for r in planDu(auj).prefix(2) { n.manges[r.id] = true }; nutrition[auj] = n
+    }
+}

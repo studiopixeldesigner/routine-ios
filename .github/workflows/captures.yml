@@ -1,0 +1,75 @@
+name: Captures sur simulateur
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: captures
+  cancel-in-progress: true
+
+jobs:
+  captures:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode le plus récent
+        run: |
+          XC=$(ls -d /Applications/Xcode_*.app | grep -iv beta | sort -V | tail -1)
+          sudo xcode-select -s "$XC"; xcodebuild -version
+      - name: Outils
+        run: brew install xcodegen
+      - name: Compiler pour le simulateur
+        run: |
+          xcodegen generate
+          set -o pipefail
+          xcodebuild -project MaRoutine.xcodeproj -scheme MaRoutine -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build 2>&1 \
+            | tee sim.log | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" sim.log
+      - name: Lancer l'appli et prendre les captures
+        run: |
+          set -x
+          UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)['devices']
+          l=[x for r,v in d.items() if 'iOS' in r for x in v]
+          p=[x for x in l if x['name'].startswith('iPhone 17 Pro') and 'Max' not in x['name']] or [x for x in l if x['name'].startswith('iPhone')]
+          print(p[0]['udid'])")
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          APP=build/Build/Products/Debug-iphonesimulator/MaRoutine.app
+          xcrun simctl install "$UDID" "$APP"
+          xcrun simctl status_bar "$UDID" override --time "9:41" --batteryLevel 100 --cellularBars 4 || true
+          mkdir -p captures
+          ID=com.pixeldesigner.maroutine
+          # Intro
+          xcrun simctl launch "$UDID" $ID -demo
+          sleep 1.2; xcrun simctl io "$UDID" screenshot captures/00-intro.png
+          sleep 4
+          for theme in light dark; do
+            xcrun simctl ui "$UDID" appearance $theme
+            for o in 0 1 2 3 4; do
+              xcrun simctl terminate "$UDID" $ID || true
+              xcrun simctl launch "$UDID" $ID -capture $o -demo
+              sleep 3
+              xcrun simctl io "$UDID" screenshot captures/$theme-$o.png
+            done
+          done
+          # L'appli a-t-elle planté ?
+          ls ~/Library/Logs/DiagnosticReports/ | grep -i MaRoutine && echo "PLANTAGE DÉTECTÉ" || echo "Aucun plantage"
+          cp ~/Library/Logs/DiagnosticReports/*MaRoutine* captures/ 2>/dev/null || true
+          ls -la captures
+      - name: Publier les captures
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete captures --yes --cleanup-tag || true
+          gh release create captures captures/* --title "Captures du simulateur (n° ${{ github.run_number }})" \
+            --notes "Captures automatiques de l'appli sur un iPhone simulé." --prerelease

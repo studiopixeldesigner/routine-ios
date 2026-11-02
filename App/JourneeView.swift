@@ -16,7 +16,12 @@ struct JourneeView: View {
 
     enum Feuille: Identifiable {
         case routine, activite(String, Activite?)
-        var id: String { switch self { case .routine: "routine"; case .activite(let c, let a): "act-\(c)-\(a?.id ?? "neuve")" } }
+        var id: String {
+            switch self {
+            case .routine: return "routine"
+            case .activite(let c, let a): return "act-\(c)-\(a?.id ?? "neuve")"
+            }
+        }
     }
 
     var cle: String { demain ? Temps.demain(m.maintenant) : Temps.journee(m.maintenant) }
