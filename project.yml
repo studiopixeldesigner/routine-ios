@@ -36,6 +36,9 @@ targets:
         NSHealthShareUsageDescription: "Ma routine lit ton nombre de pas pour suivre ton objectif de marche."
         NSHealthUpdateUsageDescription: "Ma routine peut enregistrer tes séances de muscu dans Santé."
         ITSAppUsesNonExemptEncryption: false
+        CFBundleURLTypes:
+          - CFBundleURLName: com.pixeldesigner.maroutine
+            CFBundleURLSchemes: [maroutine]
     entitlements:
       path: App/MaRoutine.entitlements
       properties:

@@ -1,0 +1,30 @@
+name: Raccourci Santé
+
+on:
+  push:
+    branches: [main]
+    paths: [Raccourci/**, .github/workflows/raccourci.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  signer:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fabriquer et signer le raccourci
+        run: |
+          python3 Raccourci/fabriquer.py "brut.shortcut"
+          shortcuts sign --mode anyone --input "brut.shortcut" --output "Pas pour Ma routine.shortcut" 2>&1 | tee signature.log
+          ls -la
+          test -s "Pas pour Ma routine.shortcut"
+      - name: Publier
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete raccourci --yes --cleanup-tag || true
+          gh release create raccourci "Pas pour Ma routine.shortcut" --title "Raccourci « Pas pour Ma routine »" \
+            --notes "Lit tes pas du jour dans Santé et les envoie à Ma routine." --prerelease

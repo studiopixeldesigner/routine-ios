@@ -373,9 +373,15 @@ struct MarcheView: View {
                     if (m.d.marche[cle]?.pas ?? 0) > 0 {
                         Label("Pas reçus de l'app Raccourcis", systemImage: "figure.walk").font(.footnote).foregroundStyle(Theme.accent)
                     } else {
-                        Text("Avec un compte Apple gratuit, l'appli ne peut pas lire Santé elle-même. L'app Raccourcis peut t'envoyer tes pas automatiquement (raccourci « Enregistrer mes pas »), sinon recopie-les ici.")
+                        Text("Avec un compte Apple gratuit, l'appli ne peut pas lire Santé elle-même. Installe le raccourci « Pas pour Ma routine » puis touche « Mettre à jour depuis Santé », sinon recopie tes pas ici.")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
+                    Button {
+                        if let u = URL(string: "shortcuts://run-shortcut?name=Pas%20pour%20Ma%20routine") { UIApplication.shared.open(u) }
+                    } label: {
+                        Label("Mettre à jour depuis Santé", systemImage: "arrow.triangle.2.circlepath")
+                    }
+                    .font(.footnote.weight(.semibold))
                     Text("Détail : \(raison)").font(.caption2).foregroundStyle(.tertiary).textSelection(.enabled)
                     saisieManuelle
                 case .indisponible:

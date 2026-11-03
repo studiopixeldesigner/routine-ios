@@ -21,6 +21,19 @@ struct MaRoutineApp: App {
     var body: some Scene {
         WindowGroup {
             RacineView().environmentObject(m)
+                // « maroutine://pas?n=8421 » : envoyé par le raccourci « Pas pour Ma routine » (il lit Santé).
+                .onOpenURL { url in
+                    guard url.host == "pas",
+                          let n = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "n" })?.value,
+                          let pas = Int(Double(n.replacingOccurrences(of: ",", with: ".").filter { "0123456789.".contains($0) }) ?? -1),
+                          pas >= 0 else { return }
+                    let cle = Temps.journee()
+                    var j = m.d.marche[cle] ?? JourMarche(date: cle)
+                    j.pas = max(j.pas, pas)
+                    m.d.marche[cle] = j
+                    UserDefaults.standard.set(1, forKey: "sousSport")
+                    UserDefaults.standard.set(1, forKey: "onglet")
+                }
         }
         .onChange(of: phase) { _, p in
             if p == .active { m.recharger() }
