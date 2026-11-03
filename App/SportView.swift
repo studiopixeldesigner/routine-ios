@@ -369,8 +369,13 @@ struct MarcheView: View {
                 switch sante.etat {
                 case .actif:
                     Label("Repris automatiquement de l'app Santé", systemImage: "heart.fill").font(.footnote).foregroundStyle(Theme.accent)
-                case .refuse:
+                case .refuse(let raison):
                     Text("L'accès à Santé n'est pas disponible avec cette installation : recopie tes pas ici.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Détail : \(raison)").font(.caption2).foregroundStyle(.secondary).textSelection(.enabled)
+                    Button("Réessayer l'accès à Santé") { Task { await sante.demander() } }.font(.footnote.weight(.semibold))
+                    saisieManuelle
+                case .indisponible:
+                    Text("Santé n'est pas disponible sur cet appareil : recopie tes pas ici.").font(.footnote).foregroundStyle(.secondary)
                     saisieManuelle
                 default:
                     saisieManuelle
