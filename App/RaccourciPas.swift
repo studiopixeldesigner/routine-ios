@@ -14,7 +14,9 @@ struct EnregistrerPas: AppIntent {
     static let description = IntentDescription("Envoie à Ma routine ton nombre de pas d'aujourd'hui, par exemple depuis Santé.")
     static let openAppWhenRun = false
 
-    @Parameter(title: "Nombre de pas", inclusiveRange: (0, 200_000)) var pas: Int
+    /// Facultatif : si Santé n'a encore rien compté aujourd'hui, le raccourci envoie une valeur vide,
+    /// et on ne demande alors rien à l'écran.
+    @Parameter(title: "Nombre de pas") var pas: Int?
 
     static var parameterSummary: some ParameterSummary {
         Summary("Enregistrer \(\.$pas) pas aujourd'hui")
@@ -27,6 +29,7 @@ struct EnregistrerPas: AppIntent {
         // Même journée que dans l'appli (elle commence à 5 h) ; entre minuit et 5 h, le total de Santé
         // repart de zéro, et le « max » ci-dessous garde alors celui de la veille.
         let cle = Temps.journee()
+        guard let pas, pas >= 0 else { return .result(dialog: "Pas encore de pas comptés aujourd'hui dans Santé.") }
         var d = Stockage.charger()
         var j = d.marche[cle] ?? JourMarche(date: cle)
         j.pas = max(j.pas, pas)          // les pas ne font qu'augmenter dans la journée
