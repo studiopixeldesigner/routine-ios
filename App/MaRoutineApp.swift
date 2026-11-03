@@ -25,8 +25,9 @@ struct MaRoutineApp: App {
                 .onOpenURL { url in
                     guard url.host == "pas",
                           let n = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "n" })?.value,
-                          let pas = Int(Double(n.replacingOccurrences(of: ",", with: ".").filter { "0123456789.".contains($0) }) ?? -1),
-                          pas >= 0 else { return }
+                          let valeur = Double(n.replacingOccurrences(of: ",", with: ".").filter { "0123456789.".contains($0) }),
+                          valeur >= 0 else { return }
+                    let pas = Int(valeur)
                     let cle = Temps.journee()
                     var j = m.d.marche[cle] ?? JourMarche(date: cle)
                     j.pas = max(j.pas, pas)
