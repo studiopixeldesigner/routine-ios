@@ -22,6 +22,12 @@ final class Magasin: ObservableObject {
         Timer.publish(every: 30, on: .main, in: .common).autoconnect()
             .sink { [weak self] t in self?.maintenant = t }
             .store(in: &abonnements)
+        // Un raccourci (pas venant de Santé) a écrit dans le fichier : on reprend seulement la marche,
+        // pour ne rien perdre de ce qui est en cours dans l'appli.
+        NotificationCenter.default.publisher(for: .donneesModifiees)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.d.marche = Stockage.charger().marche }
+            .store(in: &abonnements)
     }
 
     func enregistrer(_ donnees: Donnees? = nil) {
